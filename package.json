@@ -1,0 +1,41 @@
+{
+  "name": "sectester-go",
+  "version": "0.0.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NeuraLegion/sectester-go.git"
+  },
+  "engines": {
+    "node": ">=16.x",
+    "npm": ">=8.x"
+  },
+  "author": {
+    "name": "Artem Derevnjuk",
+    "email": "artem.derevnjuk@brightsec.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NeuraLegion/sectester-go/issues"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "scripts": {
+    "is-ci": "is-ci",
+    "husky": "husky",
+    "semantic-release": "semantic-release",
+    "prepare": "is-ci || husky install"
+  },
+  "homepage": "https://github.com/NeuraLegion/sectester-go#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^17.4.4",
+    "@commitlint/config-conventional": "^17.4.4",
+    "@semantic-release/git": "^10.0.1",
+    "husky": "^8.0.3",
+    "is-ci": "^3.0.1",
+    "semantic-release": "~20.1.1"
+  }
+}
