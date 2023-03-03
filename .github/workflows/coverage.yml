@@ -34,8 +34,8 @@ jobs:
 
       - name: Send reports to Codeclimate
         uses: paambaati/codeclimate-action@v3.2.0
-        if: ${{ hashFiles('**/coverage.out') }}
+        if: ${{ hashFiles('coverage.out') }}
         env:
           CC_TEST_REPORTER_ID: 769f4877f65d09b04051904aa3f6cc8e2da60d0604f49571f925c41e0fd14847
         with:
-          coverageLocations: '**/coverage.out:gocov'
+          coverageLocations: 'coverage.out:cover'
