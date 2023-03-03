@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/NeuraLegion/sectester-go/core/credentials"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,6 +15,18 @@ func TestNewConfiguration_HostnameIsInvalid(t *testing.T) {
 
 	// assert
 	assert.Nil(t, got)
+}
+
+func TestWithCredentials(t *testing.T) {
+	// arrange
+	var hostname = "app.brightsec.com"
+	var cred = &credentials.Credentials{}
+
+	// act
+	got, _ := NewConfiguration(hostname, WithCredentials(cred))
+
+	// assert
+	assert.Equal(t, got.credentials, cred)
 }
 
 func TestNewConfiguration_ValidHostname_ResolvesApiAndBus(t *testing.T) {
@@ -50,7 +63,7 @@ func TestNewConfiguration_ValidHostname_ResolvesApiAndBus(t *testing.T) {
 
 			// assert
 			assert.Condition(t, func() (success bool) {
-				return got.Bus == data.Expected.Bus && got.Api == data.Expected.Api
+				return got.Bus() == data.Expected.Bus && got.Api() == data.Expected.Api
 			})
 		})
 	}
