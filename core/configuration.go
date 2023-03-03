@@ -15,22 +15,23 @@ const (
 var (
 	schemaRegex                = regexp.MustCompile(`^.+://`)
 	hostnameNormalizationRegex = regexp.MustCompile(`^((?:\w+:)?//)|^(//)?`)
-	loopbackAddresses          = []string{"localhost", "127.0.0.1"}
 )
 
 type Configuration struct {
-	Bus             string
-	Api             string
-	Name            string
-	Version         string
-	RepeaterVersion string
+	Bus               string `exhaustruct:"optional"`
+	Api               string `exhaustruct:"optional"`
+	Name              string
+	Version           string
+	RepeaterVersion   string
+	loopbackAddresses []string
 }
 
 func NewConfiguration(hostname string) (*Configuration, error) {
 	c := &Configuration{
-		Name:            Name,
-		Version:         Version,
-		RepeaterVersion: RepeaterVersion,
+		Name:              Name,
+		Version:           Version,
+		RepeaterVersion:   RepeaterVersion,
+		loopbackAddresses: []string{"localhost", "127.0.0.1"},
 	}
 	err := c.resolveUrls(hostname)
 	if err != nil {
@@ -54,7 +55,7 @@ func (c *Configuration) resolveUrls(hostname string) error {
 	if err != nil {
 		return err
 	}
-	for _, a := range loopbackAddresses {
+	for _, a := range c.loopbackAddresses {
 		if a == host {
 			c.Bus = fmt.Sprintf("amqp://%s:5672", host)
 			c.Api = fmt.Sprintf("http://%s:8000", host)
