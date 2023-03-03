@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+
+	"github.com/NeuraLegion/sectester-go/core/credentials"
 )
 
 const (
@@ -18,26 +20,62 @@ var (
 )
 
 type Configuration struct {
-	Bus               string `exhaustruct:"optional"`
-	Api               string `exhaustruct:"optional"`
-	Name              string
-	Version           string
-	RepeaterVersion   string
+	name              string
+	version           string
+	repeaterVersion   string
 	loopbackAddresses []string
+	bus               string                   `exhaustruct:"optional"`
+	api               string                   `exhaustruct:"optional"`
+	credentials       *credentials.Credentials `exhaustruct:"optional"`
 }
 
-func NewConfiguration(hostname string) (*Configuration, error) {
+type ConfigurationOption func(f *Configuration)
+
+func WithCredentials(credentials *credentials.Credentials) ConfigurationOption {
+	return func(f *Configuration) {
+		f.credentials = credentials
+	}
+}
+
+func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configuration, error) {
 	c := &Configuration{
-		Name:              Name,
-		Version:           Version,
-		RepeaterVersion:   RepeaterVersion,
+		name:              Name,
+		version:           Version,
+		repeaterVersion:   RepeaterVersion,
 		loopbackAddresses: []string{"localhost", "127.0.0.1"},
 	}
 	err := c.resolveUrls(hostname)
 	if err != nil {
 		return nil, err
 	}
+	for _, applyOpt := range opts {
+		applyOpt(c)
+	}
 	return c, nil
+}
+
+func (c *Configuration) Credentials() *credentials.Credentials {
+	return c.credentials
+}
+
+func (c *Configuration) Api() string {
+	return c.api
+}
+
+func (c *Configuration) Bus() string {
+	return c.bus
+}
+
+func (c *Configuration) Name() string {
+	return c.name
+}
+
+func (c *Configuration) Version() string {
+	return c.version
+}
+
+func (c *Configuration) RepeaterVersion() string {
+	return c.repeaterVersion
 }
 
 func (c *Configuration) normalizeHostname(hostname string) (string, error) {
@@ -57,13 +95,13 @@ func (c *Configuration) resolveUrls(hostname string) error {
 	}
 	for _, a := range c.loopbackAddresses {
 		if a == host {
-			c.Bus = fmt.Sprintf("amqp://%s:5672", host)
-			c.Api = fmt.Sprintf("http://%s:8000", host)
+			c.bus = fmt.Sprintf("amqp://%s:5672", host)
+			c.api = fmt.Sprintf("http://%s:8000", host)
 			return nil
 		}
 	}
-	c.Bus = fmt.Sprintf("amqps://amq.%s:5672", host)
-	c.Api = fmt.Sprintf("https://%s", host)
+	c.bus = fmt.Sprintf("amqps://amq.%s:5672", host)
+	c.api = fmt.Sprintf("https://%s", host)
 	return nil
 }
 
