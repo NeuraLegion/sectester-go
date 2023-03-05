@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/NeuraLegion/sectester-go/core/credentials"
+	"github.com/NeuraLegion/sectester-go/core/credentials/env"
 )
 
 const (
@@ -31,7 +32,7 @@ type Configuration struct {
 	bus                 string                   `exhaustruct:"optional"`
 	api                 string                   `exhaustruct:"optional"`
 	credentials         *credentials.Credentials `exhaustruct:"optional"`
-	credentialProviders []credentials.Provider   `exhaustruct:"optional"`
+	credentialProviders []credentials.Provider
 }
 
 type ConfigurationOption func(f *Configuration)
@@ -65,7 +66,7 @@ func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configurat
 		version:             Version,
 		repeaterVersion:     RepeaterVersion,
 		loopbackAddresses:   []string{"localhost", "127.0.0.1"},
-		credentialProviders: []credentials.Provider{},
+		credentialProviders: []credentials.Provider{new(env.Provider)},
 	}
 	err := c.resolveUrls(hostname)
 	if err != nil {
