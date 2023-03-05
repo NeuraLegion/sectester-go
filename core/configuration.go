@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -20,29 +21,37 @@ var (
 )
 
 type Configuration struct {
-	name              string
-	version           string
-	repeaterVersion   string
-	loopbackAddresses []string
-	bus               string                   `exhaustruct:"optional"`
-	api               string                   `exhaustruct:"optional"`
-	credentials       *credentials.Credentials `exhaustruct:"optional"`
+	name                string
+	version             string
+	repeaterVersion     string
+	loopbackAddresses   []string
+	bus                 string                   `exhaustruct:"optional"`
+	api                 string                   `exhaustruct:"optional"`
+	credentials         *credentials.Credentials `exhaustruct:"optional"`
+	credentialProviders []credentials.Provider   `exhaustruct:"optional"`
 }
 
 type ConfigurationOption func(f *Configuration)
 
 func WithCredentials(credentials *credentials.Credentials) ConfigurationOption {
-	return func(f *Configuration) {
-		f.credentials = credentials
+	return func(c *Configuration) {
+		c.credentials = credentials
+	}
+}
+
+func WithCredentialsProviders(providers []credentials.Provider) ConfigurationOption {
+	return func(c *Configuration) {
+		c.credentialProviders = providers
 	}
 }
 
 func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configuration, error) {
 	c := &Configuration{
-		name:              Name,
-		version:           Version,
-		repeaterVersion:   RepeaterVersion,
-		loopbackAddresses: []string{"localhost", "127.0.0.1"},
+		name:                Name,
+		version:             Version,
+		repeaterVersion:     RepeaterVersion,
+		loopbackAddresses:   []string{"localhost", "127.0.0.1"},
+		credentialProviders: []credentials.Provider{},
 	}
 	err := c.resolveUrls(hostname)
 	if err != nil {
@@ -50,6 +59,10 @@ func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configurat
 	}
 	for _, applyOpt := range opts {
 		applyOpt(c)
+	}
+	err = c.loadCredentials()
+	if err != nil {
+		return nil, err
 	}
 	return c, nil
 }
@@ -76,6 +89,44 @@ func (c *Configuration) Version() string {
 
 func (c *Configuration) RepeaterVersion() string {
 	return c.repeaterVersion
+}
+
+func (c *Configuration) loadCredentials() error {
+	if c.credentials == nil && (c.credentialProviders == nil || len(c.credentialProviders) == 0) {
+		return errors.New("please provide either 'credentials' or 'credentialProviders'")
+	}
+
+	if c.credentials != nil {
+		return nil
+	}
+
+	cred, err := c.discoverCredentials()
+
+	if err != nil {
+		return err
+	}
+
+	c.credentials = cred
+
+	return nil
+}
+
+func (c *Configuration) discoverCredentials() (*credentials.Credentials, error) {
+	var cred *credentials.Credentials
+
+	for _, provider := range c.credentialProviders {
+		cred = provider.Get()
+
+		if cred != nil {
+			break
+		}
+	}
+
+	if cred == nil {
+		return nil, errors.New("could not load cred from any providers")
+	}
+
+	return cred, nil
 }
 
 func (c *Configuration) normalizeHostname(hostname string) (string, error) {
