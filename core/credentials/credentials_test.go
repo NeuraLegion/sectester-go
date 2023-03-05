@@ -13,7 +13,7 @@ func TestNew_InvalidToken(t *testing.T) {
 	_, err := New(token)
 
 	// assert
-	assert.Error(t, err, "unable to recognize the API key")
+	assert.EqualError(t, err, "unable to recognize the API key")
 }
 
 func TestNew_TokenNotDefined(t *testing.T) {
@@ -24,7 +24,7 @@ func TestNew_TokenNotDefined(t *testing.T) {
 	_, err := New(token)
 
 	// assert
-	assert.Error(t, err, "provide an API key")
+	assert.EqualError(t, err, "provide an API key")
 }
 
 func TestCredentials_Token(t *testing.T) {
