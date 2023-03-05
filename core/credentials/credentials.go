@@ -7,10 +7,20 @@ import (
 
 var tokenValidationRegexp = regexp.MustCompile(`^[A-Za-z0-9+/=]{7}\.nex[apr]\.[A-Za-z0-9+/=]{32}$`)
 
+// A Credentials allows to set credentials to access the application.
+// More info about [setting up an API key].
+//
+// [setting up an API key]: https://docs.brightsec.com/docs/manage-your-personal-account#manage-your-personal-api-keys-authentication-tokens
+//
+//nolint:lll // linter does not respect a long URL in the docs
 type Credentials struct {
 	token string
 }
 
+// A New creates a new instance of Credentials.
+//
+// var cred, _ = credentials.New("your API key")
+// var config = core.NewConfiguration("app.brightsec.com", core.WithCredentials(cred).
 func New(token string) (*Credentials, error) {
 	err := validate(token)
 
