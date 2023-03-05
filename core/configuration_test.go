@@ -2,10 +2,11 @@ package core
 
 import (
 	"fmt"
-	"github.com/NeuraLegion/sectester-go/core/credentials"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
+
+	"github.com/NeuraLegion/sectester-go/core/credentials"
 )
 
 type mockProvider struct {

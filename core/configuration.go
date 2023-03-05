@@ -20,6 +20,9 @@ var (
 	hostnameNormalizationRegex = regexp.MustCompile(`^((?:\w+:)?//)|^(//)?`)
 )
 
+// Configuration allows you to configure the SDK including credentials from different sources.
+// The default configuration is as follows:
+// &Configuration { credentialProviders: []credentials.Provider{ new(env.Provider), } }.
 type Configuration struct {
 	name                string
 	version             string
@@ -33,18 +36,29 @@ type Configuration struct {
 
 type ConfigurationOption func(f *Configuration)
 
+// WithCredentials sets credentials.Credentials to access the application.
+//
+// var config = core.NewConfiguration("app.brightsec.com", core.WithCredentials(/* your credentials */).
 func WithCredentials(credentials *credentials.Credentials) ConfigurationOption {
 	return func(c *Configuration) {
 		c.credentials = credentials
 	}
 }
 
+// WithCredentialsProviders allows you to provide a list of credentials.Provider to load credentials.Credentials
+// in runtime.
+//
+// var config = core.NewConfiguration("app.brightsec.com", core.WithCredentialsProviders(/* your providers */).
 func WithCredentialsProviders(providers []credentials.Provider) ConfigurationOption {
 	return func(c *Configuration) {
 		c.credentialProviders = providers
 	}
 }
 
+// NewConfiguration creates a new instance of Configuration.
+// Requires the application name (domain name), that is used to establish connection with.
+//
+// var config = NewConfiguration("app.neuralegion.com").
 func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configuration, error) {
 	c := &Configuration{
 		name:                Name,
