@@ -39,7 +39,7 @@ func TestNewMessage_DefaultOptions(t *testing.T) {
 		return got.Name() == expectedName &&
 			got.CreatedAt().After(time.Time{}) &&
 			got.ExpectReply() == true &&
-			got.Ttl() == time.Minute &&
+			got.Ttl() == (time.Second*10) &&
 			len(got.CorrelationId()) != 0
 	})
 }
