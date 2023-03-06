@@ -19,8 +19,8 @@ type Credentials struct {
 
 // A New creates a new instance of Credentials.
 //
-// var cred, _ = credentials.New("your API key")
-// var config = core.NewConfiguration("app.brightsec.com", core.WithCredentials(cred).
+//	var cred, _ = credentials.New("your API key")
+//	var config = core.NewConfiguration("app.brightsec.com", core.WithCredentials(cred).
 func New(token string) (*Credentials, error) {
 	err := validate(token)
 
