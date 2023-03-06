@@ -1,6 +1,6 @@
 package bus
 
-// EventBus allows to implement a event bus pattern.
+// EventBus allows to implement an event bus pattern.
 type EventBus interface {
 	EventDispatcher
 	CommandDispatcher
