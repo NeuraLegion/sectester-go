@@ -10,8 +10,8 @@ const BrightToken = "BRIGHT_TOKEN"
 
 // A Provider reads credentials from the following environment variable: 'BRIGHT_TOKEN'
 //
-// var p = new(env.Provider)
-// var config = core.NewConfiguration("app.brightsec.com", core.WithCredentialsProviders([]credentials.Provider { p })).
+//	var p = new(env.Provider)
+//	var config = core.NewConfiguration("app.brightsec.com", core.WithCredentialsProviders([]credentials.Provider { p })).
 type Provider struct{}
 
 // Get returns a instance of credentials.Credentials.

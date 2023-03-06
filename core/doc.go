@@ -3,10 +3,10 @@
 //
 // You just need to simply create a new instance of core.Configuration:
 //
-// var config = core.NewConfiguration("app.brightsec.com")
+//	var config = core.NewConfiguration("app.brightsec.com")
 //
 // Configuration can be customized, for instance, you can set a credentials manually:
 //
-// var cred, _ = credentials.Credentials("your API key")
-// var config = core.NewConfiguration("app.brightsec.com", WithCredentials(cred))
+//	var cred, _ = credentials.Credentials("your API key")
+//	var config = core.NewConfiguration("app.brightsec.com", WithCredentials(cred))
 package core
