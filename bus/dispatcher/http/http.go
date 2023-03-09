@@ -34,31 +34,25 @@ type Http struct {
 func (h *Http) Execute(message *bus.Message) (any, error) {
 	ch := make(chan *executionResult)
 
-	go func(message *bus.Message) {
+	go func(message *bus.Message, ch chan<- *executionResult) {
+		defer close(ch)
 		res, err := h.sendRequest(message)
 		if err != nil {
 			ch <- &executionResult{result: nil, err: err}
 			return
 		}
-
 		defer res.Body.Close()
-
 		if !message.ExpectReply() {
 			ch <- &executionResult{result: nil, err: nil}
 			return
 		}
-
 		result, err := h.parseResponse(res)
 		ch <- &executionResult{result: result, err: err}
-	}(message)
+	}(message, ch)
 
 	select {
 	case r := <-ch:
-		if r.err != nil {
-			return nil, r.err
-		}
-
-		return r.result, nil
+		return r.result, r.err
 	case <-time.After(message.Ttl()):
 		return nil, fmt.Errorf("no response for %s", message.Ttl().String())
 	}
@@ -79,19 +73,11 @@ func (h *Http) parseResponse(res *http.Response) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	body, err := h.readBody(res)
-	if err != nil {
-		return nil, err
-	}
-	return h.parseBody(body)
-}
-
-func (h *Http) readBody(res *http.Response) ([]byte, error) {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
-	return body, nil
+	return h.parseBody(body)
 }
 
 func (h *Http) parseBody(body []byte) (any, error) {
@@ -113,7 +99,7 @@ func (h *Http) throwIfUnsuccessful(res *http.Response) error {
 	if !h.canObtainErrorMessage(res) {
 		return fmt.Errorf("request failed with status code %d", res.StatusCode)
 	}
-	body, err := h.readBody(res)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
@@ -125,13 +111,13 @@ func (h *Http) sendRequest(message *bus.Message) (*http.Response, error) {
 	defer cancel()
 
 	options := h.normalizeRequestOptions(message)
-	u := h.buildUrl(options)
+	uri := h.buildUrl(options)
 
-	r, _ := http.NewRequestWithContext(ctx, options.Method, u.String(), options.Body)
+	req, _ := http.NewRequestWithContext(ctx, options.Method, uri.String(), options.Body)
 
-	h.addHeaders(r, options)
+	h.addHeaders(req, options)
 
-	return h.client.Do(r)
+	return h.client.Do(req)
 }
 
 func (h *Http) buildUrl(options *Request) *url.URL {
