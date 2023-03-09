@@ -274,7 +274,7 @@ func TestHttp_ExecuteWithoutExpectingReply_ReturnsNil(t *testing.T) {
 func TestHttp_Execute_ReturnsErrorByTimeout(t *testing.T) {
 	// arrange
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(5)
+		time.Sleep(time.Millisecond * 5)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
@@ -282,7 +282,7 @@ func TestHttp_Execute_ReturnsErrorByTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := bus.NewMessage("test", bus.WithPayload(Request{}), bus.WithTtl(1))
+	m, err := bus.NewMessage("test", bus.WithPayload(Request{}), bus.WithTtl(time.Millisecond))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +295,7 @@ func TestHttp_Execute_ReturnsErrorByTimeout(t *testing.T) {
 	result, err := h.Execute(m)
 
 	// assert
-	assert.ErrorContains(t, err, "context deadline exceeded")
+	assert.ErrorContains(t, err, fmt.Sprintf("no response for %s", m.Ttl().String()))
 	assert.Nil(t, result)
 }
 

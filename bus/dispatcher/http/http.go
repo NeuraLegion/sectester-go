@@ -21,24 +21,47 @@ const (
 	AuthorizationHeaderField = "authorization"
 )
 
+type executionResult struct {
+	result any
+	err    error
+}
+
 type Http struct {
 	client  *http.Client
 	options Options
 }
 
 func (h *Http) Execute(message *bus.Message) (any, error) {
-	res, err := h.sendRequest(message)
-	if err != nil {
-		return nil, err
+	ch := make(chan *executionResult)
+
+	go func(message *bus.Message) {
+		res, err := h.sendRequest(message)
+		if err != nil {
+			ch <- &executionResult{result: nil, err: err}
+			return
+		}
+
+		defer res.Body.Close()
+
+		if !message.ExpectReply() {
+			ch <- &executionResult{result: nil, err: nil}
+			return
+		}
+
+		result, err := h.parseResponse(res)
+		ch <- &executionResult{result: result, err: err}
+	}(message)
+
+	select {
+	case r := <-ch:
+		if r.err != nil {
+			return nil, r.err
+		}
+
+		return r.result, nil
+	case <-time.After(message.Ttl()):
+		return nil, fmt.Errorf("no response for %s", message.Ttl().String())
 	}
-
-	defer res.Body.Close()
-
-	if !message.ExpectReply() {
-		return nil, nil
-	}
-
-	return h.parseResponseBody(res)
 }
 
 func (h *Http) normalizeRequestOptions(message *bus.Message) *Request {
@@ -51,7 +74,7 @@ func (h *Http) normalizeRequestOptions(message *bus.Message) *Request {
 	return &options
 }
 
-func (h *Http) parseResponseBody(res *http.Response) (any, error) {
+func (h *Http) parseResponse(res *http.Response) (any, error) {
 	err := h.throwIfUnsuccessful(res)
 	if err != nil {
 		return nil, err
