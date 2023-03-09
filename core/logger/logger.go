@@ -9,6 +9,14 @@ import (
 
 type LogLevel int
 
+type Logger interface {
+	LogLevel() LogLevel
+	Error(message string, args ...any)
+	Warn(message string, args ...any)
+	Log(message string, args ...any)
+	Debug(message string, args ...any)
+}
+
 const (
 	Silent LogLevel = iota
 	Error
@@ -17,21 +25,8 @@ const (
 	Verbose
 )
 
-var humanizedLevels = []string{
-	"silent", "error", "warn", "notice", "verbose",
-}
-
 func (s LogLevel) String() string {
-	return humanizedLevels[s]
-}
-
-func maxLength() int {
-	copied := make([]string, len(humanizedLevels))
-	copy(copied, humanizedLevels)
-	sort.Slice(copied, func(i, j int) bool {
-		return len(copied[i]) >= len(copied[j])
-	})
-	return len(copied[0])
+	return humanizedLevel(int(s))
 }
 
 func (s LogLevel) Humanize() string {
@@ -39,10 +34,22 @@ func (s LogLevel) Humanize() string {
 	return strings.ToUpper(template)
 }
 
-type Logger interface {
-	LogLevel() LogLevel
-	Error(message string, args ...any)
-	Warn(message string, args ...any)
-	Log(message string, args ...any)
-	Debug(message string, args ...any)
+func humanizedLevels() []string {
+	return []string{
+		"silent", "error", "warn", "notice", "verbose",
+	}
+}
+
+func humanizedLevel(idx int) string {
+	return humanizedLevels()[idx]
+}
+
+func maxLength() int {
+	levels := humanizedLevels()
+	copied := make([]string, len(levels))
+	copy(copied, levels)
+	sort.Slice(copied, func(i, j int) bool {
+		return len(copied[i]) >= len(copied[j])
+	})
+	return len(copied[0])
 }
