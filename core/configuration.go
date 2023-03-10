@@ -3,12 +3,12 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/NeuraLegion/sectester-go/core/logger"
 	"net/url"
 	"regexp"
 
 	"github.com/NeuraLegion/sectester-go/core/credentials"
 	"github.com/NeuraLegion/sectester-go/core/credentials/env"
+	"github.com/NeuraLegion/sectester-go/core/logger"
 )
 
 const (

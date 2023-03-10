@@ -33,12 +33,12 @@ func (s LogLevel) String() string {
 	return humanizedLevel(s.Index())
 }
 
-// Index returns an integer representation of level
+// Index returns an integer representation of level.
 func (s LogLevel) Index() int {
 	return int(s)
 }
 
-// Humanize returns a formatted humanized representation of level, e.g. 'NOTICE '
+// Humanize returns a formatted humanized representation of level, e.g. 'NOTICE '.
 func (s LogLevel) Humanize() string {
 	template := fmt.Sprintf("%-"+strconv.Itoa(maxLength())+"s", s.String())
 	return strings.ToUpper(template)

@@ -31,7 +31,7 @@ func Default(logLevel LogLevel) *Fmt {
 //	var buf bytes.Buffer
 //	logger.New(logger.Error, &buf, clock.SystemProvider{})
 func New(logLevel LogLevel, writer io.Writer, clock clock.Provider) *Fmt {
-	return &Fmt{logLevel: logLevel, writer: writer, clock: clock}
+	return &Fmt{logLevel: logLevel, writer: writer, clock: clock, mu: sync.Mutex{}}
 }
 
 // LogLevel returns a current log level.
