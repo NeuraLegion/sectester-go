@@ -9,7 +9,7 @@ func TestAnsiCodeColor_String(t *testing.T) {
 	// arrange
 	color := Red
 	// act
-	result := color.String()
+	got := color.String()
 	// assert
-	assert.Equal(t, result, "\u001B[1m\u001B[31m")
+	assert.Equal(t, got, "\u001B[1m\u001B[31m")
 }

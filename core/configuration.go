@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/NeuraLegion/sectester-go/core/logger"
 	"net/url"
 	"regexp"
 
@@ -24,7 +25,7 @@ var (
 // Configuration allows you to configure the SDK including credentials from different sources.
 // The default configuration is as follows:
 //
-//	&Configuration { credentialProviders: []credentials.Provider{ new(env.Provider), } }.
+//	&Configuration { credentialProviders: []credentials.Provider{ new(env.Provider), logLevel: logger.Error } }.
 type Configuration struct {
 	name                string
 	version             string
@@ -34,6 +35,7 @@ type Configuration struct {
 	api                 string                   `exhaustruct:"optional"`
 	credentials         *credentials.Credentials `exhaustruct:"optional"`
 	credentialProviders []credentials.Provider
+	logLevel            logger.LogLevel
 }
 
 type ConfigurationOption func(f *Configuration)
@@ -57,6 +59,13 @@ func WithCredentialsProviders(providers []credentials.Provider) ConfigurationOpt
 	}
 }
 
+// WithLogLevel allows you to say what level of logs to report. Any logs of a higher level than the setting are shown.
+func WithLogLevel(level logger.LogLevel) ConfigurationOption {
+	return func(c *Configuration) {
+		c.logLevel = level
+	}
+}
+
 // NewConfiguration creates a new instance of Configuration.
 // Requires the application name (domain name), that is used to establish connection with.
 //
@@ -68,6 +77,7 @@ func NewConfiguration(hostname string, opts ...ConfigurationOption) (*Configurat
 		repeaterVersion:     RepeaterVersion,
 		loopbackAddresses:   []string{"localhost", "127.0.0.1"},
 		credentialProviders: []credentials.Provider{new(env.Provider)},
+		logLevel:            logger.Error,
 	}
 	err := c.resolveUrls(hostname)
 	if err != nil {
@@ -105,6 +115,10 @@ func (c *Configuration) Version() string {
 
 func (c *Configuration) RepeaterVersion() string {
 	return c.repeaterVersion
+}
+
+func (c *Configuration) LogLevel() logger.LogLevel {
+	return c.logLevel
 }
 
 func (c *Configuration) loadCredentials() error {

@@ -11,6 +11,9 @@ import (
 	"github.com/NeuraLegion/sectester-go/core/logger/colorize"
 )
 
+// A Fmt represents an active logging object that generates lines of
+// output to an os.Stdout by default. A Fmt can be used simultaneously from
+// multiple goroutines; it guarantees to serialize access to the io.Writer.
 type Fmt struct {
 	logLevel LogLevel
 	writer   io.Writer
@@ -18,36 +21,51 @@ type Fmt struct {
 	mu       sync.Mutex
 }
 
+// Default creates a default instance of Fmt that writes output to os.Stdout.
 func Default(logLevel LogLevel) *Fmt {
 	return New(logLevel, os.Stdout, &clock.SystemProvider{})
 }
 
+// New allows to create an instance of Fmt customizing a writer and time provider.
+//
+//	var buf bytes.Buffer
+//	logger.New(logger.Error, &buf, clock.SystemProvider{})
 func New(logLevel LogLevel, writer io.Writer, clock clock.Provider) *Fmt {
 	return &Fmt{logLevel: logLevel, writer: writer, clock: clock}
 }
 
+// LogLevel returns a current log level.
 func (f *Fmt) LogLevel() LogLevel {
 	return f.logLevel
 }
 
+// SetLogLevel sets the log level to a desired value.
 func (f *Fmt) SetLogLevel(logLevel LogLevel) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.logLevel = logLevel
 }
 
+// Error prints a formatted message to the output.
+// Arguments are handled in the manner of fmt.Print.
 func (f *Fmt) Error(message string, args ...any) {
 	f.write(Error, message, args...)
 }
 
+// Warn prints a formatted message to the output.
+// Arguments are handled in the manner of fmt.Print.
 func (f *Fmt) Warn(message string, args ...any) {
 	f.write(Warn, message, args...)
 }
 
+// Log prints a formatted message to the output.
+// Arguments are handled in the manner of fmt.Print.
 func (f *Fmt) Log(message string, args ...any) {
 	f.write(Notice, message, args...)
 }
 
+// Debug prints a formatted message to the output.
+// Arguments are handled in the manner of fmt.Print.
 func (f *Fmt) Debug(message string, args ...any) {
 	f.write(Verbose, message, args...)
 }

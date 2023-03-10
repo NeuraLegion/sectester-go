@@ -6,18 +6,21 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// Console is an implementation of the Console interface for Windows systems.
 type Console struct {
 	isColored bool
 }
 
 const ansiColorRequiredMode uint = windows.ENABLE_PROCESSED_OUTPUT | windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING
 
+// New returns a new instance of Console trying to enable Windows ANSI colors for the stdout and stderr console handles.
 func New() *Console {
 	c := &Console{}
-	c.isColored = len(os.Getenv("NO_COLOR")) == 0 && c.enable()
+	c.isColored = c.enable()
 	return c
 }
 
+// IsColored returns true if the console supports colored output, and false otherwise.
 func (c *Console) IsColored() bool {
 	return c.isColored
 }

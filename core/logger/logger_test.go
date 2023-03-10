@@ -9,9 +9,9 @@ func TestLogLevel_String(t *testing.T) {
 	// arrange
 	level := Error
 	// act
-	result := level.String()
+	got := level.String()
 	// assert
-	assert.Equal(t, result, "error")
+	assert.Equal(t, got, "error")
 }
 
 func TestLogLevel_Humanize(t *testing.T) {

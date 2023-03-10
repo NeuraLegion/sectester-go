@@ -23,10 +23,10 @@ func TestAnsiColorize_Colorize_ReturnsInputWithColors(t *testing.T) {
 	colorize := New(console)
 
 	// act
-	result := colorize.Colorize(Red, input)
+	got := colorize.Colorize(Red, input)
 
 	// assert
-	assert.Equal(t, result, Red.String()+input+DefaultForeground.String())
+	assert.Equal(t, got, Red.String()+input+DefaultForeground.String())
 }
 
 func TestAnsiColorize_Colorize_ReturnsInput(t *testing.T) {
@@ -37,8 +37,8 @@ func TestAnsiColorize_Colorize_ReturnsInput(t *testing.T) {
 	colorize := New(console)
 
 	// act
-	result := colorize.Colorize(Red, input)
+	got := colorize.Colorize(Red, input)
 
 	// assert
-	assert.Equal(t, result, input)
+	assert.Equal(t, got, input)
 }

@@ -7,8 +7,10 @@ import (
 	"strings"
 )
 
+// LogLevel defines level of logs to report.
 type LogLevel int
 
+// Logger interface defines the logger that the SDK will use.
 type Logger interface {
 	LogLevel() LogLevel
 	Error(message string, args ...any)
@@ -17,6 +19,7 @@ type Logger interface {
 	Debug(message string, args ...any)
 }
 
+// Predefined log levels for common scenarios.
 const (
 	Silent LogLevel = iota
 	Verbose
@@ -25,14 +28,17 @@ const (
 	Error
 )
 
+// String returns the string representation of the level.
 func (s LogLevel) String() string {
 	return humanizedLevel(s.Index())
 }
 
+// Index returns an integer representation of level
 func (s LogLevel) Index() int {
 	return int(s)
 }
 
+// Humanize returns a formatted humanized representation of level, e.g. 'NOTICE '
 func (s LogLevel) Humanize() string {
 	template := fmt.Sprintf("%-"+strconv.Itoa(maxLength())+"s", s.String())
 	return strings.ToUpper(template)
