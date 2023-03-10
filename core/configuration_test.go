@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/NeuraLegion/sectester-go/core/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
@@ -51,6 +52,18 @@ func TestWithCredentials(t *testing.T) {
 
 	// assert
 	assert.Equal(t, got.Credentials(), cred)
+}
+
+func TestWithLogLevel(t *testing.T) {
+	// arrange
+	var hostname = "app.brightsec.com"
+	var cred, _ = credentials.New("weobbz5.nexa.vennegtzr2h7urpxgtksetz2kwppdgj0")
+
+	// act
+	got, _ := NewConfiguration(hostname, WithCredentials(cred), WithLogLevel(logger.Warn))
+
+	// assert
+	assert.Equal(t, got.LogLevel(), logger.Warn)
 }
 
 func TestWithCredentialsProviders(t *testing.T) {
@@ -160,7 +173,6 @@ func TestNewConfiguration_ValidHostname(t *testing.T) {
 		{Input: "http://example.com:443", Expected: resolvedHost{Bus: "amqps://amq.example.com:5672", Api: "https://example.com"}},
 	}
 
-	// act
 	for _, data := range hostnames {
 		t.Run(data.Input, func(t *testing.T) {
 			// arc
