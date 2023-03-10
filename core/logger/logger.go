@@ -19,14 +19,18 @@ type Logger interface {
 
 const (
 	Silent LogLevel = iota
-	Error
-	Warn
-	Notice
 	Verbose
+	Notice
+	Warn
+	Error
 )
 
 func (s LogLevel) String() string {
-	return humanizedLevel(int(s))
+	return humanizedLevel(s.Index())
+}
+
+func (s LogLevel) Index() int {
+	return int(s)
 }
 
 func (s LogLevel) Humanize() string {
@@ -36,7 +40,7 @@ func (s LogLevel) Humanize() string {
 
 func humanizedLevels() []string {
 	return []string{
-		"silent", "error", "warn", "notice", "verbose",
+		"silent", "verbose", "notice", "warn", "error",
 	}
 }
 
