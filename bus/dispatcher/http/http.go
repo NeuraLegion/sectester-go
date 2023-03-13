@@ -15,9 +15,13 @@ import (
 )
 
 const (
-	AuthScheme               = "api-key %s"
+	// AuthScheme is the authentication scheme used for the HTTP request.
+	AuthScheme = "api-key %s"
+	// CorrelationIdHeaderField is the name of the header field used for the correlation ID of the HTTP request.
 	CorrelationIdHeaderField = "x-correlation-id"
-	Date                     = "date"
+	// DateHeaderField is the name of the header field used for the date of the HTTP request.
+	DateHeaderField = "date"
+	// AuthorizationHeaderField is the name of the header field used for the authorization token of the HTTP request.
 	AuthorizationHeaderField = "authorization"
 )
 
@@ -26,11 +30,38 @@ type executionResult struct {
 	err    error
 }
 
+// Http represents an HTTP implementation of the bus.CommandDispatcher interface.
+// Http is an alternative way to execute the commands over HTTP. To start, you should create
+// a Http instance by passing the following options to the constructor:
+//
+//	dispatcher: = &Http{
+//		client: &http.Client{},
+//		options: Options{Token: config.Credentials().Token(), BaseUrl: config.Api()},
+//	}
 type Http struct {
 	client  *http.Client
 	options Options
 }
 
+// Execute sends an HTTP request based on the provided bus.Message and returns the response, unless otherwise is stated.
+// Before, you have to create an instance of bus.Message with an instance of Request as payload:
+//
+//	p := map[string]any{"foo": "bar"}
+//	d, err := json.Marshal(p)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	m, err := bus.NewMessage("CreateRepeater", bus.WithPayload(
+//		Request{
+//			Url: "/api/v1/repeaters",
+//			Method: http.MethodPost,
+//			Body: io.NopCloser(bytes.NewReader(d))
+//		}
+//	))
+//
+// Once it is done, you can perform a request using Execute as follows:
+//
+//	response := dispatcher.Execute(m)
 func (h *Http) Execute(message *bus.Message) (any, error) {
 	ch := make(chan *executionResult)
 
@@ -64,7 +95,7 @@ func (h *Http) normalizeRequestOptions(message *bus.Message) *Request {
 		options.Headers = http.Header{}
 	}
 	options.Headers.Add(CorrelationIdHeaderField, message.CorrelationId())
-	options.Headers.Add(Date, message.CreatedAt().Format(time.RFC3339))
+	options.Headers.Add(DateHeaderField, message.CreatedAt().Format(time.RFC3339))
 	return &options
 }
 
