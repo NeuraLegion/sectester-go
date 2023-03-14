@@ -76,7 +76,6 @@ func (r *Rabbit) Publish(message *bus.Message) error {
 func (r *Rabbit) Register(name string, handler bus.EventHandler) error {
 	handlers := r.handlers[name]
 	if handlers == nil {
-		handlers = []bus.EventHandler{}
 		if err := r.bindQueue(name); err != nil {
 			return err
 		}
@@ -121,6 +120,7 @@ func (r *Rabbit) bindQueue(name string) error {
 	if err != nil {
 		return err
 	}
+	defer channel.Close()
 	return channel.QueueBind(r.options.ClientQueue,
 		name,
 		r.options.Exchange,
@@ -134,6 +134,7 @@ func (r *Rabbit) unBindQueue(name string) error {
 	if err != nil {
 		return err
 	}
+	defer channel.Close()
 	return channel.QueueUnbind(r.options.ClientQueue,
 		name,
 		r.options.Exchange,
@@ -146,6 +147,7 @@ func (r *Rabbit) createConsumerChannel() (*amqp091.Channel, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer channel.Close()
 	go func(ch chan *amqp091.Error) {
 		<-ch
 		channel, _ = r.createConsumerChannel()
@@ -296,6 +298,7 @@ func (r *Rabbit) sendMessageViaNewChannel(rm *replyMessage) error {
 	if err != nil {
 		return err
 	}
+	defer channel.Close()
 	return r.sendMessage(channel, rm)
 }
 
