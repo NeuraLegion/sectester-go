@@ -62,7 +62,7 @@ func (r *Rabbit) Execute(message *bus.Message) (any, error) {
 func (r *Rabbit) Publish(message *bus.Message) error {
 	r.manager.TryConnect()
 
-	err := r.sendMessageViaNewChannel(replyMessage{
+	return r.sendMessageViaNewChannel(&replyMessage{
 		payload:       message.Payload(),
 		name:          message.Name(),
 		routingKey:    message.Name(),
@@ -71,12 +71,6 @@ func (r *Rabbit) Publish(message *bus.Message) error {
 		timestamp:     message.CreatedAt(),
 		replyTo:       "",
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (r *Rabbit) Register(name string, handler bus.EventHandler) error {
@@ -224,33 +218,21 @@ func (r *Rabbit) receivingMessage(message *amqp091.Delivery) {
 	if message.Redelivered {
 		return
 	}
-	var name string
-	if len(message.Type) == 0 {
-		name = message.RoutingKey
-	} else {
-		name = message.Type
-	}
-	handlers, err := r.getHandlers(name)
+	name := getMessageName(message)
+	body, err := r.deserialize(message)
 	if err != nil {
 		return
 	}
-	var body map[string]any
-	err = json.Unmarshal(message.Body, &body)
-	if err != nil {
-		return
-	}
+	cm := r.buildConsumedMessage(message, name, body)
 	r.logger.Debug(
-		"Received a event (%s) with following payload: %j", name,
-		body,
+		"Received a event (%s) with following payload: %j", cm.name,
+		cm.payload,
 	)
+	handlers, err := r.getHandlers(cm.name)
+	if err != nil {
+		return
+	}
 	for _, handler := range handlers {
-		cm := consumedMessage{
-			correlationId: message.CorrelationId,
-			name:          name,
-			payload:       body,
-			replyTo:       message.ReplyTo,
-			timestamp:     message.Timestamp,
-		}
 		if err = r.handleEvent(cm, handler); err != nil {
 			r.logger.Error(
 				"Error while processing a message (%s) due to error occurred. Event: %s",
@@ -261,7 +243,26 @@ func (r *Rabbit) receivingMessage(message *amqp091.Delivery) {
 	}
 }
 
-func (r *Rabbit) handleEvent(cm consumedMessage, handler bus.EventHandler) error {
+func (r *Rabbit) buildConsumedMessage(message *amqp091.Delivery, name string, body any) *consumedMessage {
+	return &consumedMessage{
+		correlationId: message.CorrelationId,
+		name:          name,
+		payload:       body,
+		replyTo:       message.ReplyTo,
+		timestamp:     message.Timestamp,
+	}
+}
+
+func (r *Rabbit) deserialize(message *amqp091.Delivery) (map[string]any, error) {
+	var body map[string]any
+	err := json.Unmarshal(message.Body, &body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func (r *Rabbit) handleEvent(cm *consumedMessage, handler bus.EventHandler) error {
 	m := bus.NewRawMessage(cm.name, cm.correlationId, cm.timestamp, cm.payload)
 	result, err := handler.Handle(*m)
 	if err != nil {
@@ -275,14 +276,14 @@ func (r *Rabbit) handleEvent(cm consumedMessage, handler bus.EventHandler) error
 	return nil
 }
 
-func (r *Rabbit) sendReplyOnEvent(cm consumedMessage, result any) error {
+func (r *Rabbit) sendReplyOnEvent(cm *consumedMessage, result any) error {
 	r.logger.Debug(
 		"Sending a reply (%s) back with following payload: %j",
 		cm.name,
 		result,
 	)
 	//nolint:exhaustruct // redundant and optional fields
-	return r.sendMessageViaNewChannel(replyMessage{
+	return r.sendMessageViaNewChannel(&replyMessage{
 		routingKey:    cm.replyTo,
 		correlationId: cm.correlationId,
 		payload:       result,
@@ -290,7 +291,7 @@ func (r *Rabbit) sendReplyOnEvent(cm consumedMessage, result any) error {
 	})
 }
 
-func (r *Rabbit) sendMessageViaNewChannel(rm replyMessage) error {
+func (r *Rabbit) sendMessageViaNewChannel(rm *replyMessage) error {
 	channel, err := r.manager.CreateChannel()
 	if err != nil {
 		return err
@@ -298,7 +299,7 @@ func (r *Rabbit) sendMessageViaNewChannel(rm replyMessage) error {
 	return r.sendMessage(channel, rm)
 }
 
-func (r *Rabbit) sendMessage(channel *amqp091.Channel, rm replyMessage) error {
+func (r *Rabbit) sendMessage(channel *amqp091.Channel, rm *replyMessage) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	r.logger.Debug("Send a message with following parameters: %j", rm)
@@ -334,4 +335,11 @@ func (r *Rabbit) getHandlers(name string) ([]bus.EventHandler, error) {
 		return nil, fmt.Errorf("event handler not found. Please register a handler for the following events: %s", name)
 	}
 	return handlers, nil
+}
+
+func getMessageName(message *amqp091.Delivery) string {
+	if len(message.Type) == 0 {
+		return message.RoutingKey
+	}
+	return message.Type
 }
