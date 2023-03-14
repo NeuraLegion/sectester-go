@@ -203,17 +203,23 @@ func (r *Rabbit) startBasicConsume(channel *amqp091.Channel) error {
 		return err
 	}
 	go func(consume <-chan amqp091.Delivery) {
-		for message := range consume {
-			r.receivingMessage(&message)
-		}
+		r.consumeDelivery(consume, func(delivery *amqp091.Delivery) {
+			r.handleDelivery(delivery)
+		})
 	}(consume)
 	return nil
 }
 
-func (r *Rabbit) receivingMessage(message *amqp091.Delivery) {
-	if message.Redelivered {
-		return
+func (r *Rabbit) consumeDelivery(consume <-chan amqp091.Delivery, callback func(delivery *amqp091.Delivery)) {
+	for message := range consume {
+		if message.Redelivered {
+			return
+		}
+		callback(&message)
 	}
+}
+
+func (r *Rabbit) handleDelivery(message *amqp091.Delivery) {
 	name := getMessageName(message)
 	body, err := r.deserialize(message)
 	if err != nil {
