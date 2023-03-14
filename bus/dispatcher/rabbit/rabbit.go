@@ -54,7 +54,7 @@ func NewRabbit(options *Options, manager connection.Manager, logger logger.Logge
 	return eb, nil
 }
 
-func (r *Rabbit) Execute(message *bus.Message) (any, error) {
+func (r *Rabbit) Execute(*bus.Message) (any, error) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -92,16 +92,13 @@ func (r *Rabbit) Unregister(name string, handler bus.EventHandler) error {
 			name,
 		)
 	}
-
 	idx := r.findHandler(handlers, handler)
 	r.handlers[name] = append(handlers[:idx], handlers[idx+1:]...)
-
 	if len(r.handlers) == 0 {
 		if err := r.unBindQueue(name); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -149,6 +146,7 @@ func (r *Rabbit) createConsumerChannel() (*amqp091.Channel, error) {
 	}
 	defer channel.Close()
 	go func(ch chan *amqp091.Error) {
+		defer close(ch)
 		<-ch
 		channel, _ = r.createConsumerChannel()
 		r.channel = channel
@@ -188,11 +186,7 @@ func (r *Rabbit) bindQueueToExchange(channel *amqp091.Channel) error {
 	if err != nil {
 		return err
 	}
-	err = channel.Qos(r.options.PrefetchCount, 0, false)
-	if err != nil {
-		return err
-	}
-	return nil
+	return channel.Qos(r.options.PrefetchCount, 0, false)
 }
 
 func (r *Rabbit) startBasicConsume(channel *amqp091.Channel) error {
@@ -255,15 +249,6 @@ func (r *Rabbit) buildConsumedMessage(message *amqp091.Delivery, name string, bo
 	}
 }
 
-func (r *Rabbit) deserialize(message *amqp091.Delivery) (map[string]any, error) {
-	var body map[string]any
-	err := json.Unmarshal(message.Body, &body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
-
 func (r *Rabbit) handleEvent(cm *consumedMessage, handler bus.EventHandler) error {
 	m := bus.NewRawMessage(cm.name, cm.correlationId, cm.timestamp, cm.payload)
 	result, err := handler.Handle(*m)
@@ -306,9 +291,18 @@ func (r *Rabbit) sendMessage(channel *amqp091.Channel, rm *replyMessage) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	r.logger.Debug("Send a message with following parameters: %j", rm)
-	body, err := json.Marshal(rm.payload)
+	body, err := r.serialize(rm)
 	if err != nil {
 		return err
+	}
+	publishing := amqp091.Publishing{
+		CorrelationId: rm.correlationId,
+		Type:          rm.name,
+		ReplyTo:       rm.replyTo,
+		Timestamp:     rm.timestamp,
+		DeliveryMode:  2,
+		ContentType:   "application/json",
+		Body:          body,
 	}
 	return channel.PublishWithContext(
 		ctx,
@@ -317,16 +311,25 @@ func (r *Rabbit) sendMessage(channel *amqp091.Channel, rm *replyMessage) error {
 		true,
 		false,
 		//nolint:exhaustruct // redundant and optional fields
-		amqp091.Publishing{
-			CorrelationId: rm.correlationId,
-			Type:          rm.name,
-			ReplyTo:       rm.replyTo,
-			Timestamp:     rm.timestamp,
-			DeliveryMode:  2,
-			ContentType:   "application/json",
-			Body:          body,
-		},
+		publishing,
 	)
+}
+
+func (r *Rabbit) serialize(rm *replyMessage) ([]byte, error) {
+	body, err := json.Marshal(rm.payload)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
+}
+
+func (r *Rabbit) deserialize(message *amqp091.Delivery) (map[string]any, error) {
+	var body map[string]any
+	err := json.Unmarshal(message.Body, &body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 func (r *Rabbit) getHandlers(name string) ([]bus.EventHandler, error) {
