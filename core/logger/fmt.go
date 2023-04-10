@@ -9,16 +9,18 @@ import (
 
 	"github.com/NeuraLegion/sectester-go/core/logger/clock"
 	"github.com/NeuraLegion/sectester-go/core/logger/colorize"
+	"github.com/NeuraLegion/sectester-go/core/logger/console"
 )
 
 // A Fmt represents an active logging object that generates lines of
 // output to an os.Stdout by default. A Fmt can be used simultaneously from
 // multiple goroutines; it guarantees to serialize access to the io.Writer.
 type Fmt struct {
-	logLevel LogLevel
-	writer   io.Writer
-	clock    clock.Provider
-	mu       sync.Mutex
+	logLevel  LogLevel
+	writer    io.Writer
+	clock     clock.Provider
+	mu        sync.Mutex
+	colorizer colorize.Colorize
 }
 
 // Default creates a default instance of Fmt that writes output to os.Stdout.
@@ -31,7 +33,7 @@ func Default(logLevel LogLevel) *Fmt {
 //	var buf bytes.Buffer
 //	logger.New(logger.Error, &buf, clock.SystemProvider{})
 func New(logLevel LogLevel, writer io.Writer, clock clock.Provider) *Fmt {
-	return &Fmt{logLevel: logLevel, writer: writer, clock: clock, mu: sync.Mutex{}}
+	return &Fmt{logLevel: logLevel, writer: writer, clock: clock, mu: sync.Mutex{}, colorizer: colorize.New(console.New())}
 }
 
 // LogLevel returns a current log level.
@@ -84,9 +86,7 @@ func (f *Fmt) buildHeader(level LogLevel) string {
 	timestamp := time.Now().Format(time.RFC3339)
 	header := fmt.Sprintf("[%s] [%s]", timestamp, level.Humanize())
 
-	return f.getColor(level).String() +
-		header +
-		f.getColor(-1).String()
+	return f.colorizer.Colorize(f.getColor(level), header)
 }
 
 func (f *Fmt) getColor(level LogLevel) colorize.AnsiCodeColor {
