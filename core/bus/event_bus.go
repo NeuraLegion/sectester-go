@@ -5,6 +5,6 @@ type EventBus interface {
 	EventDispatcher
 	CommandDispatcher
 
-	register(messageName string, handler EventHandler) error
-	unregister(messageName string, handler EventHandler) error
+	Register(name string, handler EventHandler) error
+	Unregister(name string, handler EventHandler) error
 }

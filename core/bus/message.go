@@ -84,14 +84,7 @@ func NewMessage(name string, opts ...MessageOption) (*Message, error) {
 		return nil, err
 	}
 
-	m := &Message{
-		correlationId: id.String(),
-		createdAt:     time.Now(),
-		name:          name,
-		payload:       nil,
-		ttl:           time.Second * 10,
-		expectReply:   true,
-	}
+	m := NewRawMessage(name, id.String(), time.Now(), nil)
 
 	for _, applyOpt := range opts {
 		err = applyOpt(m)
@@ -101,6 +94,18 @@ func NewMessage(name string, opts ...MessageOption) (*Message, error) {
 	}
 
 	return m, nil
+}
+
+// NewRawMessage creates an instance of Message.
+func NewRawMessage(name, correlationId string, createdAt time.Time, payload any) *Message {
+	return &Message{
+		correlationId,
+		createdAt,
+		name,
+		payload,
+		time.Second * 10,
+		true,
+	}
 }
 
 // CorrelationId is used to ensure atomicity while working with EventBus. By default, random UUID.
