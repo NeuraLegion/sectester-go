@@ -83,7 +83,7 @@ func (f *Fmt) write(level LogLevel, message string, args ...any) {
 }
 
 func (f *Fmt) buildHeader(level LogLevel) string {
-	timestamp := time.Now().Format(time.RFC3339)
+	timestamp := f.clock.Now().Format(time.RFC3339)
 	header := fmt.Sprintf("[%s] [%s]", timestamp, level.Humanize())
 
 	return f.colorizer.Colorize(f.getColor(level), header)
