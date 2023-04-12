@@ -1,35 +1,12 @@
 package core
 
 import (
-	"fmt"
 	"github.com/NeuraLegion/sectester-go/core/logger"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/NeuraLegion/sectester-go/core/credentials"
 )
-
-type mockProvider struct {
-	mock.Mock
-}
-
-func (p *mockProvider) Get() *credentials.Credentials {
-	args := p.Called()
-	res := args.Get(0)
-
-	if res == nil {
-		return nil
-	}
-
-	c, ok := res.(*credentials.Credentials)
-
-	if !ok {
-		panic(fmt.Sprintf("unable to cast the resulting object: %v", args.Get(0)))
-	}
-
-	return c
-}
 
 func TestNewConfiguration_HostnameIsInvalid(t *testing.T) {
 	// arrange
@@ -70,11 +47,11 @@ func TestWithCredentialsProviders(t *testing.T) {
 	// arrange
 	var hostname = "app.brightsec.com"
 	var cred, _ = credentials.New("weobbz5.nexa.vennegtzr2h7urpxgtksetz2kwppdgj0")
-	var provider = new(mockProvider)
+	var provider = credentials.NewMockProvider(t)
 	var providers = []credentials.Provider{
 		provider,
 	}
-	provider.On("Get").Return(cred)
+	provider.EXPECT().Get().Return(cred)
 
 	// act
 	got, _ := NewConfiguration(hostname, WithCredentialsProviders(providers))
@@ -98,11 +75,11 @@ func TestWithCredentialsProviders_NoCredentials(t *testing.T) {
 func TestWithCredentialsProviders_UnableToFindCredentials(t *testing.T) {
 	// arrange
 	var hostname = "app.brightsec.com"
-	var provider = new(mockProvider)
+	var provider = credentials.NewMockProvider(t)
 	var providers = []credentials.Provider{
 		provider,
 	}
-	provider.On("Get").Return(nil)
+	provider.EXPECT().Get().Return(nil)
 
 	// act
 	_, err := NewConfiguration(hostname, WithCredentialsProviders(providers))
@@ -116,14 +93,14 @@ func TestWithCredentialsProviders_MultipleProvidersReturnCredentials(t *testing.
 	var hostname = "app.brightsec.com"
 	var cred1, _ = credentials.New("weobbz5.nexa.vennegtzr2h7urpxgtksetz2kwppdgj0")
 	var cred2, _ = credentials.New("weobbz5.nexa.vennegtzr2h7urpxgtksetz2kwppdgj1")
-	var provider1 = new(mockProvider)
-	var provider2 = new(mockProvider)
+	var provider1 = credentials.NewMockProvider(t)
+	var provider2 = credentials.NewMockProvider(t)
 	var providers = []credentials.Provider{
 		provider1,
 		provider2,
 	}
-	provider1.On("Get").Return(cred1)
-	provider2.On("Get").Return(cred2)
+	provider1.EXPECT().Get().Return(cred1)
+	provider2.EXPECT().Get().Return(cred2)
 
 	// act
 	got, _ := NewConfiguration(hostname, WithCredentialsProviders(providers))

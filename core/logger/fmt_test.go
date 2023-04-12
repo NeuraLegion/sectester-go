@@ -3,22 +3,12 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"github.com/NeuraLegion/sectester-go/core/logger/clock"
 	"github.com/NeuraLegion/sectester-go/core/logger/colorize"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 	"time"
 )
-
-type mockProvider struct {
-	mock.Mock
-}
-
-func (p *mockProvider) Now() time.Time {
-	args := p.Called()
-
-	return args.Get(0).(time.Time)
-}
 
 func createLogPattern(level string, timestamp time.Time, color colorize.AnsiCodeColor) string {
 	return fmt.Sprintf(
@@ -32,8 +22,8 @@ func createLogPattern(level string, timestamp time.Time, color colorize.AnsiCode
 
 func TestFmt_Error(t *testing.T) {
 	timestamp := time.Now()
-	provider := new(mockProvider)
-	provider.On("Now").Return(timestamp)
+	provider := clock.NewMockProvider(t)
+	provider.EXPECT().Now().Return(timestamp)
 	expected := createLogPattern("ERROR  ", timestamp, colorize.Red)
 	for _, data := range []struct {
 		input    LogLevel
@@ -45,7 +35,7 @@ func TestFmt_Error(t *testing.T) {
 		{Verbose, ""},
 		{Silent, ""},
 	} {
-		t.Run(data.input.String(), func(t *testing.T) {
+		t.Run(data.input.String(), func(tt *testing.T) {
 			// arrange
 			var buf bytes.Buffer
 			logger := New(data.input, &buf, provider)
@@ -54,15 +44,15 @@ func TestFmt_Error(t *testing.T) {
 			logger.Error("message")
 
 			// assert
-			assert.Equal(t, buf.String(), data.expected)
+			assert.Equal(tt, buf.String(), data.expected)
 		})
 	}
 }
 
 func TestFmt_Warn(t *testing.T) {
 	timestamp := time.Now()
-	provider := new(mockProvider)
-	provider.On("Now").Return(timestamp)
+	provider := clock.NewMockProvider(t)
+	provider.EXPECT().Now().Return(timestamp)
 	expected := createLogPattern("WARN   ", timestamp, colorize.Yellow)
 	for _, data := range []struct {
 		input    LogLevel
@@ -90,8 +80,8 @@ func TestFmt_Warn(t *testing.T) {
 
 func TestFmt_Log(t *testing.T) {
 	timestamp := time.Now()
-	provider := new(mockProvider)
-	provider.On("Now").Return(timestamp)
+	provider := clock.NewMockProvider(t)
+	provider.EXPECT().Now().Return(timestamp)
 	expected := createLogPattern("NOTICE ", timestamp, colorize.DarkGreen)
 	for _, data := range []struct {
 		input    LogLevel
@@ -119,8 +109,8 @@ func TestFmt_Log(t *testing.T) {
 
 func TestFmt_Debug(t *testing.T) {
 	timestamp := time.Now()
-	provider := new(mockProvider)
-	provider.On("Now").Return(timestamp)
+	provider := clock.NewMockProvider(t)
+	provider.EXPECT().Now().Return(timestamp)
 	expected := createLogPattern("VERBOSE", timestamp, colorize.Cyan)
 	for _, data := range []struct {
 		input    LogLevel

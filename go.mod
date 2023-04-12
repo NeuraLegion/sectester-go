@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gofrs/uuid/v5 v5.0.0
 	github.com/stretchr/testify v1.8.2
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 )
 
 require (
