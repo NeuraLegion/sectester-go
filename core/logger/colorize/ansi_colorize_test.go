@@ -2,24 +2,14 @@ package colorize
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"testing"
 )
-
-type mockConsole struct {
-	mock.Mock
-}
-
-func (p *mockConsole) IsColored() bool {
-	args := p.Called()
-	return args.Bool(0)
-}
 
 func TestAnsiColorize_Colorize_ReturnsInputWithColors(t *testing.T) {
 	// arrange
 	input := "input"
-	console := new(mockConsole)
-	console.On("IsColored").Return(true)
+	console := NewMockConsole(t)
+	console.EXPECT().IsColored().Return(true)
 	colorize := New(console)
 
 	// act
@@ -32,8 +22,8 @@ func TestAnsiColorize_Colorize_ReturnsInputWithColors(t *testing.T) {
 func TestAnsiColorize_Colorize_ReturnsInput(t *testing.T) {
 	// arrange
 	input := "input"
-	console := new(mockConsole)
-	console.On("IsColored").Return(false)
+	console := NewMockConsole(t)
+	console.EXPECT().IsColored().Return(false)
 	colorize := New(console)
 
 	// act
